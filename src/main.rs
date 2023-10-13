@@ -1,63 +1,98 @@
 #![warn(clippy::pedantic)]
 
+mod camera;
 mod components;
-mod spawner;
 mod map;
 mod map_builder;
+mod spawner;
 mod systems;
-mod camera;
 mod turn_state;
 
 mod prelude {
     pub use bracket_lib::prelude::*;
-    pub use legion::*;
-    pub use legion::world::SubWorld;
-    pub use legion::systems::CommandBuffer;
+    pub use hecs::*;
     pub const SCREEN_WIDTH: i32 = 80;
     pub const SCREEN_HEIGHT: i32 = 50;
     pub const DISPLAY_WIDTH: i32 = SCREEN_WIDTH / 2;
     pub const DISPLAY_HEIGHT: i32 = SCREEN_HEIGHT / 2;
-    pub use crate::components::*;
-    pub use crate::spawner::*;
-    pub use crate::map::*;
-    pub use crate::systems::*;
-    pub use crate::map_builder::*;
     pub use crate::camera::*;
+    pub use crate::components::*;
+    pub use crate::map::*;
+    pub use crate::map_builder::*;
+    pub use crate::spawner::*;
+    pub use crate::systems::*;
     pub use crate::turn_state::*;
 }
 
 use prelude::*;
 
 struct State {
-    ecs : World,
-    resources: Resources,
-    input_systems: Schedule,
-    player_systems: Schedule,
-    monster_systems: Schedule
+    ecs: World, //will need to switch the ecs variable from a legion world to a hecs world
+    key: Option<VirtualKeyCode>,
+    turnstate: TurnState,
+    camera: Camera,
+    map: Map,
+    command_buffer: CommandBuffer,
 }
 
 impl State {
     fn new() -> Self {
-        let mut ecs = World::default();
-        let mut resources = Resources::default();
+        let mut ecs = World::new();
         let mut rng = RandomNumberGenerator::new();
         let map_builder = MapBuilder::new(&mut rng);
         spawn_player(&mut ecs, map_builder.player_start);
-        map_builder.rooms
+        map_builder
+            .rooms
             .iter()
             .skip(1)
             .map(|r| r.center())
             .for_each(|pos| spawn_monster(&mut ecs, &mut rng, pos));
-        resources.insert(map_builder.map);
-        resources.insert(Camera::new(map_builder.player_start));
-        resources.insert(TurnState::AwaitingInput);
         Self {
             ecs,
-            resources,
-            input_systems: build_input_scheduler(),
-            player_systems: build_player_scheduler(),
-            monster_systems: build_monster_scheduler()
+            key: None,
+            turnstate: TurnState::AwaitingInput,
+            camera: Camera::new(map_builder.player_start),
+            map: map_builder.map,
+            command_buffer: CommandBuffer::new(),
         }
+    }
+
+    //TICK SYSTEMS BELOW
+    fn input_systems(&mut self, ctx: &mut BTerm) {
+        use systems::*;
+        player_input::player_input(
+            &mut self.ecs,
+            &mut self.command_buffer,
+            &self.key,
+            &mut self.turnstate,
+        ); //TODO make compatible with HECS
+        map_render::map_render(&self.map, &self.camera);
+        //TODO make compatible with HECS
+        entity_render::entity_render(&self.ecs, &self.camera);
+        //TODO make compatible with HECS
+    }
+
+    fn player_systems(&mut self, ctx: &mut BTerm) {
+        use systems::*;
+        movement::movement(); //need to tweak this to not use for_each macro
+                              //TODO make compatible with HECS
+        collisions::collisions();
+        //TODO make compatible with HECS
+        map_render::map_render(&self.map, &self.camera);
+        //TODO make compatible with HECS
+        entity_render::entity_render(&self.ecs, &self.camera);
+        //TODO make compatible with HECS
+        end_turn::end_turn();
+        //TODO make compatible with HECS
+    }
+
+    fn monster_systems(&mut self, ctx: &mut BTerm) {
+        use systems::*;
+        random_move::random_move();
+        movement::movement();
+        map_render::map_render(&self.map, &self.camera);
+        entity_render::entity_render(&self.ecs, &self.camera);
+        end_turn::end_turn();
     }
 }
 
@@ -67,16 +102,12 @@ impl GameState for State {
         ctx.cls();
         ctx.set_active_console(1);
         ctx.cls();
-        self.resources.insert(ctx.key);
-        let current_state = self.resources.get::<TurnState>().unwrap().clone();
+        self.key = ctx.key;
+        let current_state = self.turnstate;
         match current_state {
-            TurnState::AwaitingInput => self.input_systems.execute(&mut self.ecs, &mut self.resources),
-            TurnState::PlayerTurn => {
-                self.player_systems.execute(&mut self.ecs, &mut self.resources);
-            }
-            TurnState::MonsterTurn => {
-                self.monster_systems.execute(&mut self.ecs, &mut self.resources)
-            }
+            TurnState::AwaitingInput => self.input_systems(ctx),
+            TurnState::PlayerTurn => self.player_systems(ctx),
+            TurnState::MonsterTurn => self.monster_systems(ctx),
         }
         render_draw_buffer(ctx).expect("Render error");
     }
