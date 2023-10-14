@@ -26,7 +26,7 @@ mod prelude {
 
 use prelude::*;
 
-struct State {
+pub struct State {
     ecs: World, //will need to switch the ecs variable from a legion world to a hecs world
     key: Option<VirtualKeyCode>,
     turnstate: TurnState,
@@ -105,7 +105,7 @@ impl GameState for State {
         ctx.set_active_console(1);
         ctx.cls();
         self.key = ctx.key;
-        state = systems::run_systems(self);
+        systems::run_systems(self);
         render_draw_buffer(ctx).expect("Render error");
     }
 }
