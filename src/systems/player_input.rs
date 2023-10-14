@@ -1,12 +1,11 @@
 use crate::prelude::*;
 
-pub fn player_input(
-    ecs: &mut World,
-    commands: &mut CommandBuffer,
-    key: &Option<VirtualKeyCode>,
-    turn_state: &mut TurnState,
-) {
-    let mut players = <(Entity, &Point)>::query().filter(component::<Player>());
+pub fn player_input(state: &mut State) -> State {
+    let &mut ecs = state.ecs;
+    let key = state.key;
+    let &mut commands = state.command_buffer;
+    let turn_state = state.turn_state;
+    let mut players = <(Entity, &Point)>::query().filter(component::<Player>()); //hasn't been changed from legion yet
 
     if let Some(key) = *key {
         let delta = match key {
@@ -29,4 +28,8 @@ pub fn player_input(
         });
         *turn_state = TurnState::PlayerTurn;
     }
+    state.ecs = ecs;
+    state.turn_state = turn_state;
+    state.command_buffer = commands;
+    state
 }

@@ -48,7 +48,7 @@ impl State {
             .map(|r| r.center())
             .for_each(|pos| spawn_monster(&mut ecs, &mut rng, pos));
         Self {
-            ecs,
+            ecs: ecs,
             key: None,
             turnstate: TurnState::AwaitingInput,
             camera: Camera::new(map_builder.player_start),
@@ -58,6 +58,7 @@ impl State {
     }
 
     //TICK SYSTEMS BELOW
+    /*
     fn input_systems(&mut self, ctx: &mut BTerm) {
         use systems::*;
         player_input::player_input(
@@ -94,6 +95,7 @@ impl State {
         entity_render::entity_render(&self.ecs, &self.camera);
         end_turn::end_turn();
     }
+    */
 }
 
 impl GameState for State {
@@ -103,12 +105,7 @@ impl GameState for State {
         ctx.set_active_console(1);
         ctx.cls();
         self.key = ctx.key;
-        let current_state = self.turnstate;
-        match current_state {
-            TurnState::AwaitingInput => self.input_systems(ctx),
-            TurnState::PlayerTurn => self.player_systems(ctx),
-            TurnState::MonsterTurn => self.monster_systems(ctx),
-        }
+        state = systems::run_systems(self);
         render_draw_buffer(ctx).expect("Render error");
     }
 }
