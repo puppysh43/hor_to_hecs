@@ -10,12 +10,12 @@ pub mod random_move;
 pub fn run_systems(state: &mut State) {
     let current_state = state.turnstate;
     match current_state {
-        TurnState::AwaitingInput => state = input_systems(&mut state),
-        TurnState::PlayerTurn => state = player_systems(&mut state),
-        TurnState::MonsterTurn => state = monster_systems(&mut state),
+        TurnState::AwaitingInput => input_systems(state),
+        TurnState::PlayerTurn => player_systems(state),
+        TurnState::MonsterTurn => monster_systems(state),
     }
 }
-
+//ALL SYSTEMS NEED TO BE CONVERTED.
 fn input_systems(state: &mut State) {
     player_input::player_input(state); //read and write system
     map_render::map_render(state); //read only system
@@ -23,9 +23,17 @@ fn input_systems(state: &mut State) {
 }
 
 fn player_systems(state: &mut State) {
-    //filler
+    movement::movement(state);
+    collisions::collisions(state);
+    map_render::map_render(state);
+    entity_render::entity_render(state);
+    end_turn::end_turn(state);
 }
 
 fn monster_systems(state: &mut State) {
-    //filler
+    random_move::random_move(state);
+    movement::movement(state);
+    map_render::map_render(state);
+    entity_render::entity_render(state);
+    end_turn::end_turn(state);
 }

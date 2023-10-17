@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
-pub fn entity_render(ecs: &World, camera: &Camera) {
+pub fn entity_render(state: &mut State) {
+    //need ECS and camera
     let mut draw_batch = DrawBatch::new();
     draw_batch.target(1);
     let offset = Point::new(camera.left_x, camera.top_y);

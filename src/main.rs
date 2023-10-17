@@ -22,6 +22,7 @@ mod prelude {
     pub use crate::spawner::*;
     pub use crate::systems::*;
     pub use crate::turn_state::*;
+    pub use crate::State;
 }
 
 use prelude::*;
@@ -48,7 +49,7 @@ impl State {
             .map(|r| r.center())
             .for_each(|pos| spawn_monster(&mut ecs, &mut rng, pos));
         Self {
-            ecs: ecs,
+            ecs,
             key: None,
             turnstate: TurnState::AwaitingInput,
             camera: Camera::new(map_builder.player_start),
@@ -56,46 +57,6 @@ impl State {
             command_buffer: CommandBuffer::new(),
         }
     }
-
-    //TICK SYSTEMS BELOW
-    /*
-    fn input_systems(&mut self, ctx: &mut BTerm) {
-        use systems::*;
-        player_input::player_input(
-            &mut self.ecs,
-            &mut self.command_buffer,
-            &self.key,
-            &mut self.turnstate,
-        ); //TODO make compatible with HECS
-        map_render::map_render(&self.map, &self.camera);
-        //TODO make compatible with HECS
-        entity_render::entity_render(&self.ecs, &self.camera);
-        //TODO make compatible with HECS
-    }
-
-    fn player_systems(&mut self, ctx: &mut BTerm) {
-        use systems::*;
-        movement::movement(); //need to tweak this to not use for_each macro
-                              //TODO make compatible with HECS
-        collisions::collisions();
-        //TODO make compatible with HECS
-        map_render::map_render(&self.map, &self.camera);
-        //TODO make compatible with HECS
-        entity_render::entity_render(&self.ecs, &self.camera);
-        //TODO make compatible with HECS
-        end_turn::end_turn();
-        //TODO make compatible with HECS
-    }
-
-    fn monster_systems(&mut self, ctx: &mut BTerm) {
-        use systems::*;
-        random_move::random_move();
-        movement::movement();
-        map_render::map_render(&self.map, &self.camera);
-        entity_render::entity_render(&self.ecs, &self.camera);
-        end_turn::end_turn();
-    }
-    */
 }
 
 impl GameState for State {
