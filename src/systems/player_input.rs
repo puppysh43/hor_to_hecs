@@ -1,13 +1,13 @@
 use crate::prelude::*;
 
-pub fn player_input(state: &mut State) -> State {
-    let &mut ecs = state.ecs;
+pub fn player_input(state: &mut State) {
+    // let &mut ecs = state.ecs;
     let key = state.key;
-    let &mut commands = state.command_buffer;
-    let turn_state = state.turn_state;
-    let mut players = <(Entity, &Point)>::query().filter(component::<Player>()); //hasn't been changed from legion yet
-
-    if let Some(key) = *key {
+    // let &mut commands = state.command_buffer;
+    let turn_state = state.turnstate;
+    // let mut players = <(Entity, &Point)>::query().filter(component::<Player>()); //hasn't been changed from legion yet
+    let mut players = state.ecs.query::<(&Entity, &Point)>();
+    if let Some(key) = key {
         let delta = match key {
             VirtualKeyCode::Left => Point::new(-1, 0),
             VirtualKeyCode::Right => Point::new(1, 0),
@@ -18,7 +18,7 @@ pub fn player_input(state: &mut State) -> State {
 
         players.iter(ecs).for_each(|(entity, pos)| {
             let destination = *pos + delta;
-            commands.spawn((
+            state.command_buffer.spawn((
                 (),
                 WantsToMove {
                     entity: *entity,
@@ -26,10 +26,6 @@ pub fn player_input(state: &mut State) -> State {
                 },
             ));
         });
-        *turn_state = TurnState::PlayerTurn;
+        state.turnstate = TurnState::PlayerTurn;
     }
-    state.ecs = ecs;
-    state.turn_state = turn_state;
-    state.command_buffer = commands;
-    state
 }
