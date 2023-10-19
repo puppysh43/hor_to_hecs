@@ -1,9 +1,9 @@
 use crate::prelude::*;
-/*
-pub fn random_move(ecs: &SubWorld, commands: &mut CommandBuffer)*/
+
 pub fn random_move(state: &mut State) {
-    let mut movers = <(Entity, &Point, &MovingRandomly)>::query();
-    movers.iter(ecs).for_each(|(entity, pos, _)| {
+    let commands = &mut CommandBuffer::new();
+
+    for (entity, pos) in state.ecs.query_mut::<With<&Point, &MovingRandomly>>() {
         let mut rng = RandomNumberGenerator::new();
         let destination = match rng.range(0, 4) {
             0 => Point::new(-1, 0),
@@ -11,13 +11,14 @@ pub fn random_move(state: &mut State) {
             2 => Point::new(0, -1),
             _ => Point::new(0, 1),
         } + *pos;
-
-        commands.push((
+        commands.spawn((
             (),
             WantsToMove {
-                entity: *entity,
+                entity,
                 destination,
             },
         ));
-    });
+    }
+
+    commands.run_on(&mut state.ecs);
 }

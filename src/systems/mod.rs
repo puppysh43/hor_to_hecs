@@ -8,8 +8,8 @@ pub mod player_input;
 pub mod random_move;
 
 pub fn run_systems(state: &mut State) {
-    let current_state = state.turnstate;
-    match current_state {
+    let current_turn = state.turnstate;
+    match current_turn {
         TurnState::AwaitingInput => input_systems(state),
         TurnState::PlayerTurn => player_systems(state),
         TurnState::MonsterTurn => monster_systems(state),
